@@ -3,12 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { applications, documents, auditLog } from '../api/client'
 import StatusBadge from '../components/StatusBadge'
 import {
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, Tooltip
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer
 } from 'recharts'
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Minus,
-  ShieldCheck, FileText, GitMerge, ClipboardCheck, BookOpen, Lock, Activity, RefreshCw
+  ShieldCheck, FileText, GitMerge, ClipboardCheck, BookOpen, Lock, Activity, RefreshCw,
+  Building, UserCheck, Scale, FileSpreadsheet, AlertOctagon
 } from 'lucide-react'
 
 const formatINR = (n: number) =>
@@ -16,14 +16,15 @@ const formatINR = (n: number) =>
 
 function ScoreBar({ score, label }: { score: number; label: string }) {
   const cls = score >= 90 ? 'score-bar-pass' : score >= 70 ? 'score-bar-review' : 'score-bar-risk'
+  const textColor = score >= 90 ? 'var(--risk-pass-bar)' : score >= 70 ? 'var(--risk-review-bar)' : 'var(--risk-fail-bar)'
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13 }}>
-        <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-        <span style={{ fontWeight: 700 }}>{score.toFixed(1)}</span>
+        <span style={{ color: 'var(--bank-text-secondary)', fontWeight: 500 }}>{label}</span>
+        <span className="mono" style={{ fontWeight: 700, color: textColor }}>{score.toFixed(1)}%</span>
       </div>
       <div className="score-bar-track">
-        <div className={`score-bar-fill ${cls}`} style={{ width: `${score}%` }} />
+        <div className={`score-bar-fill ${cls}`} style={{ width: `${Math.min(100, Math.max(0, score))}%` }} />
       </div>
     </div>
   )
@@ -47,7 +48,6 @@ export default function ApplicationDetail() {
   const [submitting, setSubmitting] = useState(false)
   const [chainStatus, setChainStatus] = useState<any>(null)
   const [auditEntries, setAuditEntries] = useState<any[]>([])
-
   const [reanalyzing, setReanalyzing] = useState(false)
 
   const loadData = async () => {
@@ -113,8 +113,9 @@ export default function ApplicationDetail() {
   }
 
   if (!data) return (
-    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: 14 }}>
       <div className="spinner" />
+      <div style={{ fontSize: 13, color: 'var(--bank-text-muted)' }}>Loading credit file &amp; risk models...</div>
     </div>
   )
 
@@ -124,132 +125,172 @@ export default function ApplicationDetail() {
   const radarData = risk ? [
     { metric: 'Agreement', score: risk.agreement_score },
     { metric: 'Consistency', score: risk.consistency_score },
-    { metric: 'Tamper', score: risk.tamper_score },
+    { metric: 'Tamper-Free', score: risk.tamper_score },
     { metric: 'Confidence', score: risk.confidence_score },
   ] : []
 
   return (
     <div className="fade-in">
-      {/* Header Controls */}
+      {/* Top Breadcrumb & Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <button className="btn btn-ghost" onClick={() => navigate('/')} style={{ padding: '8px 14px' }}>
-          <ArrowLeft size={14} /> Back
+        <button className="btn btn-ghost" onClick={() => navigate('/')} style={{ fontSize: 13 }}>
+          <ArrowLeft size={14} /> Back to Underwriting Queue
         </button>
         <button
-          className="btn btn-primary"
+          className="btn btn-accent"
           onClick={triggerReanalysis}
           disabled={reanalyzing || !data?.documents?.length}
-          style={{ padding: '8px 16px', fontSize: 13 }}
         >
-          <RefreshCw size={14} className={reanalyzing ? 'spinner' : ''} style={{ display: 'inline', marginRight: 6 }} />
-          {reanalyzing ? 'Verifying AI Pipelines...' : 'Re-run Dual-AI Verification'}
+          <RefreshCw size={14} className={reanalyzing ? 'spinner' : ''} />
+          {reanalyzing ? 'Running Dual-AI Verification...' : 'Re-run Consensus Verification'}
         </button>
       </div>
 
       {app.is_synthetic && (
-        <div className="synthetic-banner">
-          ⚠️ SYNTHETIC DATA — NOT A REAL APPLICANT — FOR DEMONSTRATION PURPOSES ONLY
+        <div className="bank-alert-banner">
+          <AlertTriangle size={16} />
+          <div>
+            <strong>SYNTHETIC COMPLIANCE DATASET</strong>: This file contains synthetic test borrower documentation for underwriting audit simulations.
+          </div>
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
-        <div>
-          <h1 className="page-title">{app.applicant_name}</h1>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 14, marginTop: 4 }}>
-            {app.loan_type.charAt(0).toUpperCase() + app.loan_type.slice(1)} Loan ·{' '}
-            <strong style={{ color: 'var(--text-primary)' }}>{formatINR(app.loan_amount)}</strong>
-          </div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {risk && (
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1,
-                color: status === 'PASS' ? 'var(--pass)' : status === 'REVIEW' ? 'var(--review)' : 'var(--risk)' }}>
-                {risk.overall_score.toFixed(0)}<span style={{ fontSize: 18, opacity: 0.6 }}>/100</span>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Risk Score</div>
+      {/* Credit File Main Header Card */}
+      <div className="card" style={{ marginBottom: 20, borderLeft: '4px solid var(--bank-navy)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: 'var(--bank-text-muted)', background: 'var(--bank-canvas)', padding: '2px 8px', borderRadius: 4, border: '1px solid var(--bank-border)' }}>
+                FILE REF: {app.id.slice(0, 16)}
+              </span>
+              <span style={{ fontSize: 12, color: 'var(--bank-text-muted)' }}>Filed: {new Date(app.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
             </div>
-          )}
-          <StatusBadge status={status} />
+            <h1 className="page-title" style={{ fontSize: 24, marginBottom: 4 }}>{app.applicant_name}</h1>
+            <div style={{ color: 'var(--bank-text-secondary)', fontSize: 14 }}>
+              Facility: <strong style={{ color: 'var(--bank-navy)' }}>{app.loan_type.toUpperCase()} LOAN</strong> · Sanction Amount:{' '}
+              <strong className="mono" style={{ color: 'var(--bank-navy)', fontSize: 16 }}>{formatINR(app.loan_amount)}</strong>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, background: 'var(--bank-surface-muted)', padding: '12px 18px', borderRadius: 6, border: '1px solid var(--bank-border)' }}>
+            {risk && (
+              <div style={{ textAlign: 'right' }}>
+                <div className="mono" style={{
+                  fontSize: 28, fontWeight: 700, lineHeight: 1.1,
+                  color: status === 'PASS' ? 'var(--risk-pass-bar)' : status === 'REVIEW' ? 'var(--risk-review-bar)' : 'var(--risk-fail-bar)'
+                }}>
+                  {risk.overall_score.toFixed(0)}<span style={{ fontSize: 15, color: 'var(--bank-text-muted)' }}>/100</span>
+                </div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--bank-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Risk Index
+                </div>
+              </div>
+            )}
+            <StatusBadge status={status} />
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="tabs">
         {[
-          { id: 'overview', label: 'Overview', Icon: ShieldCheck },
-          { id: 'fields', label: 'Field Comparison', Icon: GitMerge },
-          { id: 'rules', label: 'Rule Engine', Icon: ClipboardCheck },
-          { id: 'crossdoc', label: 'Cross-Document', Icon: FileText },
-          { id: 'audit', label: 'Audit Log', Icon: BookOpen },
+          { id: 'overview', label: 'Credit Risk Overview', Icon: ShieldCheck },
+          { id: 'fields', label: 'Field Reconciliation', Icon: GitMerge },
+          { id: 'rules', label: 'Underwriting Rule Engine', Icon: ClipboardCheck },
+          { id: 'crossdoc', label: 'Cross-Document Audit', Icon: FileText },
+          { id: 'audit', label: 'Cryptographic Audit Trail', Icon: BookOpen },
         ].map(({ id: tid, label, Icon }) => (
           <button key={tid} className={`tab-btn ${tab === tid ? 'active' : ''}`} onClick={() => setTab(tid)}>
-            <Icon size={13} style={{ display: 'inline', marginRight: 6 }} />{label}
+            <Icon size={14} />{label}
           </button>
         ))}
       </div>
 
       {/* OVERVIEW TAB */}
       {tab === 'overview' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          {/* Explainability */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 20 }}>
+          {/* Executive Risk Memorandum */}
           {risk?.explanation_text && (
-            <div className="explain-card" style={{ gridColumn: '1 / -1' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                <ShieldCheck size={16} style={{ color: 'var(--accent-bright)' }} />
-                <span style={{ fontWeight: 700, fontSize: 14 }}>Why This Was Flagged</span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>Generated by AI — for reviewer context only</span>
+            <div className="card" style={{ gridColumn: '1 / -1', borderLeft: '4px solid #0056b3' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                <Scale size={16} color="var(--bank-blue)" />
+                <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--bank-navy)' }}>
+                  Underwriter Risk Memorandum &amp; Automated Audit Finding
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--bank-text-muted)', marginLeft: 'auto' }}>
+                  Standard Underwriting Guideline 8.1
+                </span>
               </div>
-              <p style={{ color: 'var(--text-secondary)', lineHeight: 1.8, fontSize: 14 }}>
+              <p style={{ color: 'var(--bank-text-secondary)', lineHeight: 1.7, fontSize: 13.5, background: 'var(--bank-surface-muted)', padding: 14, borderRadius: 6, border: '1px solid var(--bank-border)' }}>
                 {risk.explanation_text}
               </p>
             </div>
           )}
 
-          {/* Score breakdown */}
+          {/* Quantitative Score Breakdown */}
           {risk && (
             <div className="card">
-              <div style={{ fontWeight: 700, marginBottom: 20 }}>Score Breakdown</div>
-              <ScoreBar score={risk.agreement_score} label="AI Pipeline Agreement" />
-              <ScoreBar score={risk.consistency_score} label="Cross-Document Consistency" />
-              <ScoreBar score={risk.tamper_score} label="Tamper & Rule Signals" />
-              <ScoreBar score={risk.confidence_score} label="Model Confidence" />
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 4 }}>
-                <ScoreBar score={risk.overall_score} label="Overall Score" />
+              <div className="card-header">
+                <span className="card-title">Consensus Scoring Components</span>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--bank-text-muted)' }}>WEIGHTED EVALUATION</span>
               </div>
+              <ScoreBar score={risk.agreement_score} label="Dual-AI Extraction Agreement (Groq vs Mistral)" />
+              <ScoreBar score={risk.consistency_score} label="Cross-Document Cross-Referencing" />
+              <ScoreBar score={risk.tamper_score} label="Document Integrity & Signal Analysis" />
+              <ScoreBar score={risk.confidence_score} label="Model Extraction Confidence" />
+              
+              <div style={{ borderTop: '2px solid var(--bank-border)', paddingTop: 14, marginTop: 10 }}>
+                <ScoreBar score={risk.overall_score} label="Final Composite Risk Index" />
+              </div>
+
               {risk.single_source && (
-                <div style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: 'var(--review)', marginTop: 12 }}>
-                  ⚠️ Single-source analysis — one AI pipeline failed. Score capped.
+                <div className="bank-alert-banner" style={{ marginTop: 14 }}>
+                  <AlertTriangle size={15} />
+                  <span>Single-source fallback: One pipeline failed. Score capped at maximum 70.0 for safety.</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* Radar chart */}
+          {/* Radar Chart */}
           {radarData.length > 0 && (
             <div className="card">
-              <div style={{ fontWeight: 700, marginBottom: 12 }}>Score Radar</div>
-              <ResponsiveContainer width="100%" height={220}>
+              <div className="card-header">
+                <span className="card-title">Risk Dimension Profile</span>
+                <span style={{ fontSize: 11, color: 'var(--bank-text-muted)' }}>4-AXIS RADAR</span>
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="var(--border)" />
-                  <PolarAngleAxis dataKey="metric" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} />
-                  <Radar name="Score" dataKey="score" stroke="var(--accent)" fill="var(--accent)" fillOpacity={0.15} strokeWidth={2} />
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="metric" tick={{ fill: '#475569', fontSize: 11, fontWeight: 500 }} />
+                  <Radar name="Score" dataKey="score" stroke="#0056b3" fill="#0056b3" fillOpacity={0.15} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
           )}
 
-          {/* Tamper signals */}
+          {/* Tamper Signals */}
           {tamper_signals?.length > 0 && (
-            <div className="card" style={{ gridColumn: '1 / -1' }}>
-              <div style={{ fontWeight: 700, marginBottom: 12 }}>🔴 Tamper Signals Detected</div>
-              {tamper_signals.map((sig: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: 13 }}>
-                  <XCircle size={14} style={{ color: 'var(--risk)' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>{sig.detail}</span>
-                  <span className="badge badge-risk" style={{ marginLeft: 'auto' }}>{sig.severity}</span>
+            <div className="card" style={{ gridColumn: '1 / -1', borderLeft: '4px solid var(--risk-fail-bar)' }}>
+              <div className="card-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <AlertOctagon size={16} color="var(--risk-fail-bar)" />
+                  <span className="card-title" style={{ color: 'var(--risk-fail-text)' }}>
+                    Physical &amp; Digital Document Anomalies Detected ({tamper_signals.length})
+                  </span>
                 </div>
-              ))}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {tamper_signals.map((sig: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--risk-fail-bg)', border: '1px solid var(--risk-fail-border)', borderRadius: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <XCircle size={15} color="var(--risk-fail-bar)" />
+                      <span style={{ fontSize: 13, color: 'var(--risk-fail-text)', fontWeight: 500 }}>{sig.detail}</span>
+                    </div>
+                    <span className="badge badge-risk">{sig.severity}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -257,36 +298,53 @@ export default function ApplicationDetail() {
 
       {/* FIELD COMPARISON TAB */}
       {tab === 'fields' && (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <GitMerge size={16} style={{ color: 'var(--accent-bright)' }} />
-            <span style={{ fontWeight: 700 }}>Field-by-Field Pipeline Comparison</span>
+        <div className="table-container">
+          <div style={{ padding: '14px 18px', background: 'var(--bank-surface-muted)', borderBottom: '1px solid var(--bank-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <GitMerge size={16} color="var(--bank-navy)" />
+              <span style={{ fontWeight: 700, color: 'var(--bank-navy)', fontSize: 14 }}>
+                Dual-AI Pipeline Field Extraction &amp; Reconciliation Matrix
+              </span>
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--bank-text-muted)' }}>
+              Independent consensus between Groq Llama-3 &amp; Mistral Large
+            </span>
           </div>
           <table className="table">
             <thead>
               <tr>
-                <th>Field</th>
-                <th>Groq (AI-A)</th>
-                <th>Mistral (AI-B)</th>
-                <th>Match</th>
-                <th>Weight</th>
+                <th style={{ width: '25%' }}>Attribute / Field Key</th>
+                <th style={{ width: '25%' }}>Pipeline A (Groq Extraction)</th>
+                <th style={{ width: '25%' }}>Pipeline B (Mistral Extraction)</th>
+                <th style={{ width: '15%' }}>Consensus Status</th>
+                <th style={{ width: '10%', textAlign: 'right' }}>Weight</th>
               </tr>
             </thead>
             <tbody>
               {field_comparisons?.map((f: any, i: number) => (
                 <tr key={i}>
-                  <td style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 13 }}>{f.field_name}</td>
-                  <td style={{ fontSize: 13 }}>{f.groq_value ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>null</span>}</td>
-                  <td style={{ fontSize: 13 }}>{f.mistral_value ?? <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>null</span>}</td>
+                  <td>
+                    <span className="mono" style={{ fontWeight: 600, color: 'var(--bank-navy)', fontSize: 12.5 }}>
+                      {f.field_name}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 13, color: 'var(--bank-text-main)' }}>
+                    {f.groq_value ?? <span style={{ color: 'var(--bank-text-muted)', fontStyle: 'italic' }}>—</span>}
+                  </td>
+                  <td style={{ fontSize: 13, color: 'var(--bank-text-main)' }}>
+                    {f.mistral_value ?? <span style={{ color: 'var(--bank-text-muted)', fontStyle: 'italic' }}>—</span>}
+                  </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <MatchIcon status={f.match_status} />
                       <span style={{ fontSize: 12 }} className={`match-${f.match_status.toLowerCase().replace('_match','').replace('soft','soft')}`}>
-                        {f.match_status}
+                        {f.match_status.replace(/_/g, ' ')}
                       </span>
                     </div>
                   </td>
-                  <td style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{f.weight}×</td>
+                  <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--bank-text-muted)', fontSize: 12.5 }}>
+                    {f.weight}×
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -296,42 +354,53 @@ export default function ApplicationDetail() {
 
       {/* RULE ENGINE TAB */}
       {tab === 'rules' && (
-        <div>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: 10 }}>
-              <ClipboardCheck size={16} style={{ color: 'var(--accent-bright)' }} />
-              <span style={{ fontWeight: 700 }}>Deterministic Rule Engine</span>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 4 }}>
-                AI-independent checks — catches fraud even if both AIs are fooled
+        <div className="table-container">
+          <div style={{ padding: '14px 18px', background: 'var(--bank-surface-muted)', borderBottom: '1px solid var(--bank-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <ClipboardCheck size={16} color="var(--bank-navy)" />
+              <span style={{ fontWeight: 700, color: 'var(--bank-navy)', fontSize: 14 }}>
+                Deterministic Credit Policy &amp; Regulatory Checks
               </span>
             </div>
-            <table className="table">
-              <thead>
-                <tr><th>Rule</th><th>Status</th><th>Severity</th><th>Detail</th></tr>
-              </thead>
-              <tbody>
-                {rule_checks?.map((r: any, i: number) => (
-                  <tr key={i}>
-                    <td style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: 13 }}>{r.rule_name}</td>
-                    <td>
-                      {r.passed
-                        ? <span className="badge badge-pass"><CheckCircle2 size={11} /> Pass</span>
-                        : <span className={r.severity === 'HIGH_RISK' ? 'badge badge-risk' : 'badge badge-review'}>
-                            <XCircle size={11} /> Fail
-                          </span>
-                      }
-                    </td>
-                    <td>
-                      <span className={`badge ${r.severity === 'HIGH_RISK' ? 'badge-risk' : 'badge-review'}`}>
-                        {r.severity}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{r.detail}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <span style={{ fontSize: 12, color: 'var(--bank-text-muted)' }}>
+              Deterministic verification rules executed independently of generative models
+            </span>
           </div>
+          <table className="table">
+            <thead>
+              <tr>
+                <th style={{ width: '25%' }}>Rule Code / Check</th>
+                <th style={{ width: '15%' }}>Compliance Result</th>
+                <th style={{ width: '15%' }}>Severity Tier</th>
+                <th style={{ width: '45%' }}>Audit Detail &amp; Finding</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rule_checks?.map((r: any, i: number) => (
+                <tr key={i}>
+                  <td>
+                    <span className="mono" style={{ fontWeight: 600, color: 'var(--bank-navy)', fontSize: 12.5 }}>
+                      {r.rule_name}
+                    </span>
+                  </td>
+                  <td>
+                    {r.passed
+                      ? <span className="badge badge-pass"><CheckCircle2 size={11} /> Pass</span>
+                      : <span className={r.severity === 'HIGH_RISK' ? 'badge badge-risk' : 'badge badge-review'}>
+                          <XCircle size={11} /> Non-Compliant
+                        </span>
+                    }
+                  </td>
+                  <td>
+                    <span className={`badge ${r.severity === 'HIGH_RISK' ? 'badge-risk' : 'badge-review'}`}>
+                      {r.severity.replace(/_/g, ' ')}
+                    </span>
+                  </td>
+                  <td style={{ fontSize: 13, color: 'var(--bank-text-secondary)' }}>{r.detail}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -340,23 +409,23 @@ export default function ApplicationDetail() {
         <div style={{ display: 'grid', gap: 12 }}>
           {cross_doc_checks?.map((c: any, i: number) => (
             <div key={i} className="card card-sm" style={{
-              border: `1px solid ${c.result === 'OK' ? 'var(--pass-border)' : 'var(--risk-border)'}`,
-              background: c.result === 'OK' ? 'var(--pass-bg)' : 'var(--risk-bg)',
+              borderLeft: `4px solid ${c.result === 'OK' ? 'var(--risk-pass-bar)' : 'var(--risk-fail-bar)'}`,
+              background: '#ffffff'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <div style={{ fontWeight: 600, fontSize: 13, fontFamily: 'monospace', marginBottom: 4 }}>
-                    {c.check_type}
+                  <div className="mono" style={{ fontWeight: 700, fontSize: 13, color: 'var(--bank-navy)', marginBottom: 4 }}>
+                    {c.check_type.replace(/_/g, ' ')}
                   </div>
-                  <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{c.detail}</div>
+                  <div style={{ fontSize: 13.5, color: 'var(--bank-text-secondary)' }}>{c.detail}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                   <span className={`badge ${c.result === 'OK' ? 'badge-pass' : 'badge-risk'}`}>
-                    {c.result}
+                    {c.result === 'OK' ? 'Reconciled' : 'Discrepancy'}
                   </span>
                   {c.discrepancy_pct && (
-                    <span style={{ fontSize: 12, color: 'var(--risk)', fontWeight: 700 }}>
-                      {c.discrepancy_pct.toFixed(1)}% gap
+                    <span className="mono" style={{ fontSize: 12, color: 'var(--risk-fail-bar)', fontWeight: 700 }}>
+                      Δ {c.discrepancy_pct.toFixed(1)}% variance
                     </span>
                   )}
                 </div>
@@ -364,8 +433,8 @@ export default function ApplicationDetail() {
             </div>
           ))}
           {(!cross_doc_checks || cross_doc_checks.length === 0) && (
-            <div className="card" style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-              No cross-document checks available (only one document uploaded).
+            <div className="card" style={{ textAlign: 'center', padding: 36, color: 'var(--bank-text-muted)' }}>
+              Single document present in dossier — cross-document multi-instrument reconciliation requires at least 2 instruments.
             </div>
           )}
         </div>
@@ -374,29 +443,42 @@ export default function ApplicationDetail() {
       {/* AUDIT LOG TAB */}
       {tab === 'audit' && (
         <div>
-          <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-            <button className="btn btn-ghost" onClick={verifyChain} style={{ fontSize: 13 }}>
-              <Lock size={14} /> Verify Hash Chain
-            </button>
-            {chainStatus && (
-              <div className={`badge ${chainStatus.chain_valid ? 'badge-pass' : 'badge-risk'}`} style={{ alignItems: 'center' }}>
-                {chainStatus.chain_valid ? '✓ Chain Valid' : '✗ Chain BROKEN'} · {chainStatus.total_entries} entries
-              </div>
-            )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <button className="btn btn-ghost" onClick={verifyChain} style={{ fontSize: 13 }}>
+                <Lock size={14} /> Validate SHA-256 Ledger Integrity
+              </button>
+              {chainStatus && (
+                <div className={`badge ${chainStatus.chain_valid ? 'badge-pass' : 'badge-risk'}`}>
+                  {chainStatus.chain_valid ? '✓ Chain Cryptographically Verified' : '✗ Tampering Detected in Chain'} · {chainStatus.total_entries} entries
+                </div>
+              )}
+            </div>
+            <span style={{ fontSize: 11, color: 'var(--bank-text-muted)' }}>
+              Append-only tamper-evident audit ledger
+            </span>
           </div>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+
+          <div className="table-container">
             <table className="table">
-              <thead><tr><th>Time</th><th>Actor</th><th>Action</th><th>Entry Hash</th></tr></thead>
+              <thead>
+                <tr>
+                  <th style={{ width: '20%' }}>Timestamp (IST)</th>
+                  <th style={{ width: '20%' }}>Operator / Entity</th>
+                  <th style={{ width: '30%' }}>Underwriting Event</th>
+                  <th style={{ width: '30%' }}>Merkle / Entry Hash</th>
+                </tr>
+              </thead>
               <tbody>
                 {auditEntries.map((e: any, i: number) => (
                   <tr key={i}>
-                    <td style={{ fontSize: 12, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+                    <td className="mono" style={{ fontSize: 12, color: 'var(--bank-text-secondary)', whiteSpace: 'nowrap' }}>
                       {new Date(e.created_at).toLocaleString('en-IN')}
                     </td>
-                    <td style={{ fontSize: 13 }}>{e.actor}</td>
-                    <td style={{ fontSize: 13, fontFamily: 'monospace' }}>{e.action}</td>
-                    <td style={{ fontSize: 10, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                      {e.entry_hash.slice(0, 16)}...
+                    <td style={{ fontSize: 13, fontWeight: 600, color: 'var(--bank-navy)' }}>{e.actor}</td>
+                    <td style={{ fontSize: 13 }}>{e.action}</td>
+                    <td className="mono" style={{ fontSize: 11, color: 'var(--bank-text-muted)' }}>
+                      {e.entry_hash}
                     </td>
                   </tr>
                 ))}
@@ -406,54 +488,75 @@ export default function ApplicationDetail() {
         </div>
       )}
 
-      {/* DECISION PANEL — sticky footer */}
+      {/* DECISION SIGN-OFF PANEL — Institutional Sticky Footer */}
       {app.status !== 'decided' && (
         <div style={{
-          position: 'sticky', bottom: 24, marginTop: 32,
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-bright)',
-          borderRadius: 12, padding: 20,
-          boxShadow: '0 -4px 24px rgba(0,0,0,0.5)',
+          position: 'sticky', bottom: 20, marginTop: 32,
+          background: 'var(--bank-navy)',
+          color: '#ffffff',
+          borderRadius: 8, padding: 20,
+          boxShadow: '0 8px 30px rgba(15,23,42,0.25)',
+          border: '1px solid #1a2a40'
         }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 24 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Record Human Review Decision</div>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
-                This system does not make automated approve/reject decisions. Your decision is final.
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <UserCheck size={16} color="#60a5fa" />
+                <span style={{ fontWeight: 700, fontSize: 15, color: '#ffffff' }}>
+                  Accredited Underwriting Officer Sign-Off &amp; Sanction Note
+                </span>
+              </div>
+              <div style={{ fontSize: 12, color: '#94a3b8', marginBottom: 12 }}>
+                Statutory Requirement: Underwriting officer must record deliberate rationales before issuing credit commitment or referring to FIU.
               </div>
               <textarea
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
-                placeholder="Reviewer notes (optional)..."
+                placeholder="Enter credit memorandum, underwriting rationale, or exception reason..."
                 style={{
-                  width: '100%', background: 'var(--bg-elevated)', border: '1px solid var(--border)',
-                  borderRadius: 8, padding: 10, color: 'var(--text-primary)', fontSize: 13,
-                  resize: 'vertical', minHeight: 60, fontFamily: 'inherit',
+                  width: '100%', background: '#091524', border: '1px solid #254b7a',
+                  borderRadius: 6, padding: '10px 12px', color: '#ffffff', fontSize: 13,
+                  resize: 'vertical', minHeight: 64, fontFamily: 'inherit'
                 }}
               />
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 200 }}>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 260 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Select Decision Action:
+              </div>
               {[
-                { value: 'approve_for_underwriting', label: '✓ Approve for Underwriting', cls: 'btn-pass' },
-                { value: 'request_more_documents', label: '⊕ Request More Documents', cls: 'btn-ghost' },
-                { value: 'reject', label: '✗ Reject', cls: 'btn-risk' },
-              ].map(({ value, label, cls }) => (
+                { value: 'approve_for_underwriting', label: '✓ Approve for Credit Sanction', bg: decision === 'approve_for_underwriting' ? '#166534' : '#143322', border: '#22c55e' },
+                { value: 'request_more_documents', label: '⊕ Request Additional KYC / Dossier', bg: decision === 'request_more_documents' ? '#854d0e' : '#2b2314', border: '#eab308' },
+                { value: 'reject', label: '✗ Decline on Discrepancy / Alert FIU', bg: decision === 'reject' ? '#991b1b' : '#331515', border: '#ef4444' },
+              ].map(({ value, label, bg, border }) => (
                 <button
                   key={value}
-                  className={`btn ${cls} ${decision === value ? 'btn-primary' : ''}`}
                   onClick={() => setDecision(value)}
-                  style={{ justifyContent: 'flex-start', fontSize: 13 }}
+                  style={{
+                    background: bg,
+                    border: `1px solid ${border}`,
+                    color: '#ffffff',
+                    padding: '8px 12px',
+                    borderRadius: 5,
+                    fontSize: 12.5,
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
                 >
                   {label}
                 </button>
               ))}
+
               <button
-                className="btn btn-primary"
+                className="btn btn-accent"
                 onClick={submitReview}
                 disabled={!decision || submitting}
-                style={{ marginTop: 4 }}
+                style={{ marginTop: 6, padding: '10px 14px', fontSize: 13 }}
               >
-                {submitting ? 'Saving...' : 'Submit Decision →'}
+                {submitting ? 'Recording on Ledger...' : 'Commit Sign-Off Decision →'}
               </button>
             </div>
           </div>
@@ -461,10 +564,12 @@ export default function ApplicationDetail() {
       )}
 
       {app.status === 'decided' && (
-        <div className="card" style={{ marginTop: 24, border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.05)' }}>
-          <div style={{ color: '#a78bfa', fontWeight: 700 }}>✓ Review Completed</div>
-          <div style={{ color: 'var(--text-secondary)', fontSize: 13, marginTop: 4 }}>
-            A human reviewer has recorded a decision for this application.
+        <div className="card" style={{ marginTop: 24, borderLeft: '4px solid #6d28d9', background: '#f5f3ff' }}>
+          <div style={{ color: '#5b21b6', fontWeight: 700, fontSize: 14 }}>
+            ✓ Credit Decision Committed to Permanent Audit Ledger
+          </div>
+          <div style={{ color: '#4c1d95', fontSize: 13, marginTop: 4 }}>
+            A certified credit underwriting officer has finalized and signed off on this credit dossier. All entries are hashed.
           </div>
         </div>
       )}

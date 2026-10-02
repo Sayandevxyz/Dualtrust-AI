@@ -1,71 +1,96 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileSearch, Plus, Shield, LogOut, Activity } from 'lucide-react'
+import { Landmark, FolderKanban, FilePlus2, ShieldCheck, LogOut, CheckCircle2, ShieldAlert } from 'lucide-react'
 
 export default function Layout() {
   const navigate = useNavigate()
   const logout = () => { localStorage.removeItem('token'); navigate('/login') }
 
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <div className="logo-icon">🛡</div>
-          <div>
-            <div className="logo-text">DualTrust AI</div>
-            <div className="logo-sub">Verification Platform</div>
-          </div>
+    <div>
+      {/* Institutional Top Compliance Bar */}
+      <div className="bank-system-banner">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontWeight: 700, color: '#f8fafc', letterSpacing: '0.08em' }}>DUALTRUST FINANCIAL CORP</span>
+          <span style={{ color: '#475569' }}>|</span>
+          <span>COMMERCIAL CREDIT &amp; RISK UNDERWRITING SYSTEM</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ color: '#94a3b8' }}>WORKSTATION ID: <span className="mono" style={{ color: '#cbd5e1' }}>MUM-UW-4029</span></span>
+          <span className="badge-compliance">ISO 27001 SECURE</span>
+        </div>
+      </div>
 
-        <nav className="sidebar-nav">
-          <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <LayoutDashboard size={16} /> Dashboard
-          </NavLink>
-          <NavLink to="/new" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <Plus size={16} /> New Application
-          </NavLink>
-        </nav>
-
-        <div style={{ padding: '0 12px 12px' }}>
-          <div style={{ background: 'rgba(59,130,246,0.06)', borderRadius: 8, padding: 12, border: '1px solid rgba(59,130,246,0.15)', marginBottom: 8 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <Activity size={12} style={{ color: 'var(--accent-bright)' }} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--accent-bright)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>System Status</span>
+      <div className="layout">
+        <aside className="sidebar">
+          {/* Bank Brand Header */}
+          <div className="sidebar-header">
+            <div className="sidebar-bank-logo">
+              <Landmark size={20} />
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span>Groq (AI-A)</span><span style={{ color: 'var(--pass)' }}>● Online</span>
+            <div>
+              <div className="sidebar-bank-title">DualTrust Bancorp</div>
+              <div className="sidebar-bank-subtitle">Credit Risk Assessment</div>
+            </div>
+          </div>
+
+          {/* Navigation */}
+          <nav className="sidebar-nav">
+            <div className="sidebar-nav-heading">Underwriting Station</div>
+            <NavLink to="/" end className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <FolderKanban size={16} /> Underwriting Queue
+            </NavLink>
+            <NavLink to="/new" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <FilePlus2 size={16} /> New Credit Dossier
+            </NavLink>
+          </nav>
+
+          {/* System & Engine Telemetry */}
+          <div className="sidebar-telemetry">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+              <ShieldCheck size={13} style={{ color: '#60a5fa' }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#93c5fd', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Dual-AI Verification Engine
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: '#94a3b8', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Groq Llama-3 (Pipeline A)</span>
+                <span style={{ color: '#4ade80', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <CheckCircle2 size={10} /> Active
+                </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Mistral (AI-B)</span><span style={{ color: 'var(--pass)' }}>● Online</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Mistral Large (Pipeline B)</span>
+                <span style={{ color: '#4ade80', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <CheckCircle2 size={10} /> Active
+                </span>
+              </div>
+              <div style={{ borderTop: '1px solid #1a2a40', marginTop: 4, paddingTop: 4, display: 'flex', justifyContent: 'space-between' }}>
+                <span>Hash Audit Chain</span>
+                <span style={{ color: '#cbd5e1', fontWeight: 600 }}>SHA-256 Valid</span>
               </div>
             </div>
           </div>
 
-          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 10, border: '1px solid var(--border)', marginBottom: 8 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent-bright)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>
-              Team: Destroyers X
+          {/* Institutional User Profile */}
+          <div className="sidebar-user">
+            <div className="user-avatar">DR</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                Demo Underwriter
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8' }}>Sr. Credit Officer</div>
             </div>
-            <div style={{ fontSize: 10, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-              Rishabh · Ambrish · Praveen · Sayan · Neha
-            </div>
+            <button onClick={logout} title="Sign Out of Terminal" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', padding: 4 }}>
+              <LogOut size={15} />
+            </button>
           </div>
-        </div>
+        </aside>
 
-        <div className="sidebar-user">
-          <div className="user-avatar">DR</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Demo Reviewer</div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>reviewer</div>
-          </div>
-          <button onClick={logout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', padding: 4 }}>
-            <LogOut size={14} />
-          </button>
-        </div>
-      </aside>
-
-      <main className="main-content fade-in">
-        <Outlet />
-      </main>
+        <main className="main-content fade-in">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }
