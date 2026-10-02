@@ -1,0 +1,35 @@
+{
+  "weights": {
+    "agreement_score": 0.40,
+    "cross_document_consistency": 0.30,
+    "tamper_and_rule_signals": 0.20,
+    "ocr_model_confidence": 0.10
+  },
+  "thresholds": {
+    "pass": 90,
+    "review": 70
+  },
+  "field_match_tolerance": {
+    "numeric_percent": 2.0,
+    "date_days": 0,
+    "string_levenshtein_soft_threshold": 0.80
+  },
+  "rule_severity_penalties": {
+    "HIGH_RISK": 40,
+    "REVIEW": 15
+  },
+  "cross_doc_income_tolerance_pct": 25.0,
+  "cross_doc_itr_tolerance_pct": 20.0,
+  "cross_doc_bank_itr_tolerance_pct": 30.0,
+  "salary_slip_max_age_days": 90,
+  "velocity_pan_max_applications": 2,
+  "velocity_pan_window_days": 30,
+  "velocity_account_max_applications": 2,
+  "velocity_account_window_days": 30,
+  "loan_amount_tier_overrides": {
+    "large_loan_threshold": 2000000,
+    "large_loan_pass_threshold": 95
+  },
+  "single_source_score_cap": 65,
+  "_comment": "Edit any value here to change scoring behavior. No code change required."
+}

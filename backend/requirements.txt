@@ -1,0 +1,46 @@
+# Core
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+python-multipart==0.0.9
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Database
+sqlalchemy==2.0.30
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+# Pydantic
+pydantic==2.7.1
+pydantic-settings==2.3.0
+
+# AI Providers
+groq==0.9.0
+mistralai==1.0.3
+
+# PDF / Image processing
+pdf2image>=1.17.0
+Pillow>=10.3.0
+imagehash>=4.3.1
+PyPDF2>=3.0.1
+
+# Async task queue
+rq==1.16.2
+redis==5.0.4
+
+# HTTP client
+httpx==0.27.0
+tenacity==8.3.0
+
+# Crypto / Security
+cryptography==42.0.7
+
+# Utilities
+python-dotenv==1.0.1
+python-dateutil==2.9.0
+Levenshtein==0.25.1
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.7
+httpx==0.27.0
