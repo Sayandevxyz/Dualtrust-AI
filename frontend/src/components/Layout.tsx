@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Landmark, FolderKanban, FilePlus2, ShieldCheck, LogOut, CheckCircle2, ShieldAlert } from 'lucide-react'
+import { FolderKanban, FilePlus2, ShieldCheck, LogOut, CheckCircle2, ShieldAlert } from 'lucide-react'
+import { LogoIcon } from './Logo'
 
 export default function Layout() {
   const navigate = useNavigate()
@@ -9,8 +10,20 @@ export default function Layout() {
     <div>
       {/* Institutional Top Compliance Bar */}
       <div className="bank-system-banner">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontWeight: 700, color: '#f8fafc', letterSpacing: '0.08em' }}>DUALTRUST FINANCIAL CORP</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 4,
+            padding: '2px 4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <LogoIcon size={14} />
+          </div>
+          <span style={{ fontWeight: 800, color: '#f8fafc', letterSpacing: '0.08em' }}>
+            DUALTRUST <span style={{ color: '#f79f1a' }}>AI</span>
+          </span>
           <span style={{ color: '#475569' }}>|</span>
           <span>COMMERCIAL CREDIT &amp; RISK UNDERWRITING SYSTEM</span>
         </div>
@@ -22,14 +35,28 @@ export default function Layout() {
 
       <div className="layout">
         <aside className="sidebar">
-          {/* Bank Brand Header */}
-          <div className="sidebar-header">
-            <div className="sidebar-bank-logo">
-              <Landmark size={20} />
+          {/* DualTrust AI Brand Header */}
+          <div className="sidebar-header" style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>
+            <div style={{
+              width: 42,
+              height: 42,
+              background: '#ffffff',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+              padding: 4,
+              flexShrink: 0,
+            }}>
+              <LogoIcon size={30} />
             </div>
             <div>
-              <div className="sidebar-bank-title">DualTrust Bancorp</div>
-              <div className="sidebar-bank-subtitle">Credit Risk Assessment</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, lineHeight: 1.1 }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#ffffff', letterSpacing: '-0.2px' }}>DUALTRUST</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#f79f1a', letterSpacing: '-0.2px' }}>AI</span>
+              </div>
+              <div className="sidebar-bank-subtitle" style={{ marginTop: 3 }}>Credit Risk Assessment</div>
             </div>
           </div>
 

@@ -9,7 +9,10 @@ from datetime import datetime
 from pathlib import Path
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from mistralai import Mistral
+try:
+    from mistralai import Mistral
+except ImportError:
+    from mistralai.client import Mistral
 from app.config import settings
 from app.schemas.extraction_schema import ExtractionResult, EXTRACTION_SCHEMA_PROMPT
 

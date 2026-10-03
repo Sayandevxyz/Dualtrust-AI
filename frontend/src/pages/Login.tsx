@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { auth } from '../api/client'
-import { Landmark, ShieldCheck, Lock, AlertCircle } from 'lucide-react'
+import { ShieldCheck, Lock, AlertCircle } from 'lucide-react'
+import { LogoIcon, DualTrustLogo } from '../components/Logo'
 
 export default function Login() {
   const [email, setEmail] = useState('demo@dualtrust.ai')
@@ -45,8 +46,17 @@ export default function Login() {
         borderBottom: '1px solid #1a2a40'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#f8fafc', fontWeight: 600 }}>
-          <Landmark size={15} color="#38bdf8" />
-          <span>DUALTRUST FINANCIAL CORP — COMMERCIAL UNDERWRITING PORTAL</span>
+          <div style={{
+            background: '#ffffff',
+            borderRadius: 4,
+            padding: '2px 4px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <LogoIcon size={13} />
+          </div>
+          <span>DUALTRUST <span style={{ color: '#f79f1a' }}>AI</span> — COMMERCIAL UNDERWRITING PORTAL</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ color: '#4ade80' }}>● SECURE GATEWAY (TLS 1.3)</span>
@@ -61,29 +71,25 @@ export default function Login() {
         justifyContent: 'center',
         padding: 24,
       }}>
-        <div style={{ width: '100%', maxWidth: 420 }}>
-          {/* Bank Badge */}
-          <div style={{ textAlign: 'center', marginBottom: 28 }}>
+        <div style={{ width: '100%', maxWidth: 440 }}>
+          {/* DualTrust AI Official Logo Banner */}
+          <div style={{ textAlign: 'center', marginBottom: 26 }}>
             <div style={{
-              width: 52,
-              height: 52,
-              background: '#0f243d',
-              borderRadius: 8,
-              margin: '0 auto 14px',
-              display: 'flex',
+              display: 'inline-flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#ffffff',
-              border: '1px solid #1e3a8a',
-              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)'
+              padding: '24px 36px 20px',
+              background: '#ffffff',
+              borderRadius: 16,
+              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04)',
+              border: '1px solid #e2e8f0',
+              marginBottom: 12,
             }}>
-              <Landmark size={26} />
+              <DualTrustLogo variant="full" size="md" />
             </div>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--bank-navy)', letterSpacing: '-0.3px' }}>
-              DualTrust Bancorp
-            </h1>
-            <p style={{ color: 'var(--bank-text-muted)', fontSize: 13, marginTop: 4 }}>
-              Credit Risk &amp; Document Underwriting Station
+            <p style={{ color: 'var(--bank-text-muted)', fontSize: 13, marginTop: 4, fontWeight: 500 }}>
+              Credit Risk &amp; Fraud-Resilient Loan Underwriting Station
             </p>
           </div>
 
